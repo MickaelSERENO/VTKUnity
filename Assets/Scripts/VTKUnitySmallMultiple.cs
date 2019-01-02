@@ -25,6 +25,11 @@ namespace sereno
         private Int32 m_colorID = -1;
 
         /// <summary>
+        /// The UVID in use
+        /// </summary>
+        private Int32 m_uvID = -1;
+
+        /// <summary>
         /// Enable the clipping plane
         /// </summary>
         private bool m_planeEnabled  = false;
@@ -49,12 +54,14 @@ namespace sereno
             }
         }
 
-        public bool Init(VTKParser parser, Mesh mesh, Int32 uvID, Int32 valueID, Vector3Int offset, Vector3Int density)
+        public bool InitFromPointField(VTKParser parser, Mesh mesh, Int32 uvID, Int32 valueID, Vector3Int offset, Vector3Int density)
         {
+            m_uvID    = uvID;
+
             //Check the ID
-            if(uvID > 9)
+            if(uvID > 7)
             {
-                Debug.Log("The uvID must be between 0 to 9. This is a limitation of Unity for working within a common mesh...");
+                Debug.Log("The uvID must be between 0 to 7. This is a limitation of Unity for working within a common mesh...");
                 return false;
             }
             m_mesh    = mesh;
@@ -91,8 +98,9 @@ namespace sereno
                     }
                 }
             }
+            
             m_mesh.SetUVs(uvID, colors);
-            m_mesh.UploadMeshData(true);
+            m_mesh.UploadMeshData(false);
             m_colorID = uvID;
 
             
@@ -135,6 +143,14 @@ namespace sereno
                 else
                     ColorMaterial.DisableKeyword("SPHERE_ON");
             }
+        }
+
+        /// <summary>
+        /// The UVID in use in the current mesh.
+        /// </summary>
+        public Int32 UVID
+        {
+            get { return m_uvID; }
         }
     }
 }

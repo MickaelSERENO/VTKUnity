@@ -18,7 +18,7 @@
 			CGPROGRAM
 			#pragma vertex   vert
 			#pragma fragment frag
-			#pragma multi_compile TEXCOORD0_ON TEXCOORD1_ON TEXCOORD2_ON 
+			#pragma multi_compile TEXCOORD0_ON TEXCOORD1_ON TEXCOORD2_ON TEXCOORD3_ON TEXCOORD4_ON TEXCOORD5_ON TEXCOORD6_ON TEXCOORD7_ON
 			#pragma shader_feature SPHERE_ON
 			#pragma shader_feature PLANE_ON
 
@@ -36,6 +36,21 @@
 				#if defined(TEXCOORD2_ON)
 				float4 color  : TEXCOORD2;
 				#endif
+				#if   defined(TEXCOORD3_ON)
+                float4 color  : TEXCOORD3;
+				#endif
+				#if defined(TEXCOORD4_ON)
+				float4 color  : TEXCOORD4;
+				#endif
+				#if defined(TEXCOORD5_ON)
+				float4 color  : TEXCOORD5;
+				#endif
+				#if   defined(TEXCOORD6_ON)
+                float4 color  : TEXCOORD6;
+				#endif
+				#if defined(TEXCOORD7_ON)
+				float4 color  : TEXCOORD7;
+				#endif
 			};
 
 			struct v2f
@@ -43,6 +58,12 @@
 				float4 vertex   : SV_POSITION;
                 float4 color    : COLOR;
 				float3 position : TEXCOORD1;
+#ifdef PLANE_ON
+				float dotPlane  : TEXCOORD2;
+#endif
+#ifdef SPHERE_ON
+				float spherePos : TEXCOORD3;
+#endif
 			};
 
 			float3 _PlaneNormal;
@@ -57,19 +78,26 @@
 				o.vertex = UnityObjectToClipPos(v.vertex);
 				o.color  = v.color;
 
-				float4 pos = mul(unity_ObjectToWorld, v.vertex);
-				o.position = pos.xyz / pos.w;
+				float4 pos4 = mul(unity_ObjectToWorld, v.vertex);
+				float3 pos  = pos4.xyz / pos4.w;
+
+#ifdef PLANE_ON
+				o.dotPlane = dot((pos - _PlanePosition), _PlaneNormal);
+#endif
+#ifdef SPHERE_ON
+				o.spherePos = length(pos - _SpherePosition);
+#endif	
 				return o;
 			}
 			
 			fixed4 frag (v2f i) : SV_Target
 			{
 #ifdef PLANE_ON
-				if(dot((i.position - _PlanePosition), _PlaneNormal) < 0.0)
+				if(i.dotPlane < 0.0)
 					discard;
 #endif
 #ifdef SPHERE_ON
-				if(length(i.position - _SpherePosition) > _SphereRadius)
+				if(i.spherePos > _SphereRadius)
 					discard;
 #endif
 				return i.color;

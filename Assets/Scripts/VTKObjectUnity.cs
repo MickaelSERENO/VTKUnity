@@ -26,6 +26,11 @@ namespace sereno
         private List<VTKUnitySmallMultiple> m_smallMultiples;
 
         /// <summary>
+        /// The UV IDs available
+        /// </summary>
+        private List<Int32> m_availableUVIDs;
+
+        /// <summary>
         /// The small multiple prefab to represent sub data.
         /// </summary>
         public VTKUnitySmallMultiple SmallMultiplePrefab;
@@ -35,10 +40,15 @@ namespace sereno
         /// </summary>
         public UInt32 DesiredDensity;
 
+        /// <summary>
+        /// The file path
+        /// </summary>
+        public string FilePath;
+
         void Start() 
         {
             //Parse
-            m_parser = new VTKParser("E:/Agulhas_10_resampled.vtk");
+            m_parser = new VTKParser(FilePath);
             if(!m_parser.Parse())
             {
                 Debug.Log("Error at parsing the dataset");
@@ -129,25 +139,91 @@ namespace sereno
             m_mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
             m_mesh.vertices    = pts;
             m_mesh.triangles   = triangles;
+            m_mesh.UploadMeshData(false);
 
-            //Add a small multiples
+            //Small multiples array
             m_smallMultiples = new List<VTKUnitySmallMultiple>();
+            m_availableUVIDs = new List<Int32>();
 
-            VTKUnitySmallMultiple sm = GameObject.Instantiate(SmallMultiplePrefab);
-            if(sm.Init(m_parser, m_mesh, 1, 1, 
-                       new Vector3Int((int)ptsDesc.Size[0]/density.x, 
-                                      (int)(ptsDesc.Size[1]/density.y*ptsDesc.Size[0]),
-                                      (int)(ptsDesc.Size[2]/density.z*ptsDesc.Size[1]*ptsDesc.Size[0])),
-                       density))
-                m_smallMultiples.Add(sm);
+            for(Int32 i = 0; i < 8; i++)
+                m_availableUVIDs.Add(i);
 
-            m_mesh.UploadMeshData(true);
+            CreatePointFieldSmallMultiple(1);
         }
         
         // Update is called once per frame
         void Update() 
         {
             
+        }
+
+        /// <summary>
+        /// Create a small multiple object
+        /// </summary>
+        /// <param name="dataID">The parameter ID to use. Use Parser.GetPointFieldValueDescriptors(); to get the field ID</param>
+        /// <returns>A VTKUnitySmallMultiple object.</returns>
+        public VTKUnitySmallMultiple CreatePointFieldSmallMultiple(Int32 dataID)
+        {
+            VTKStructuredPoints   ptsDesc = m_parser.GetStructuredPointsDescriptor();
+            VTKUnitySmallMultiple sm      = GameObject.Instantiate(SmallMultiplePrefab);
+            Vector3Int            density = Density;
+
+            if(sm.InitFromPointField(m_parser, m_mesh, m_availableUVIDs[m_availableUVIDs.Count-1], dataID, 
+                                     new Vector3Int((int)(ptsDesc.Size[0]/density.x), 
+                                                    (int)(ptsDesc.Size[1]/density.y*ptsDesc.Size[0]),
+                                                    (int)(ptsDesc.Size[2]/density.z*ptsDesc.Size[1]*ptsDesc.Size[0])),
+                                     density))
+            {
+                m_smallMultiples.Add(sm);
+                m_availableUVIDs.RemoveAt(m_availableUVIDs.Count-1);
+                return sm;
+            }
+
+            Destroy(sm);
+            return null;
+        }
+
+        /// <summary>
+        /// Remove a point field small multiple
+        /// </summary>
+        /// <param name="sm">The Small multiple to remove</param>
+        public void RemovePointFieldSmallMultiple(VTKUnitySmallMultiple sm)
+        {
+            //Search for the small multiples in our array
+            int id = -1;
+            for(int i = 0; i < m_smallMultiples.Count; i++)
+            {
+                if(m_smallMultiples[i] == sm)
+                {
+                    id = i;
+                    break;
+                }
+            }
+
+            //If found, mark the UVID as available and reset the mesh.
+            if(id >= 0)
+            {
+                m_availableUVIDs.Add(sm.UVID);
+                m_smallMultiples.RemoveAt(id);
+
+                //Free graphical memory
+                if(m_mesh.isReadable)
+                {
+                    m_mesh.SetUVs(sm.UVID, new List<Vector3>());
+                    m_mesh.UploadMeshData(false);
+                }
+
+                Destroy(sm);
+            }
+        }
+
+        /// <summary>
+        /// Upload the mesh data to the GPU and remove the CPU double buffered memory allocated
+        /// It permits to gain the CPU memory allocation
+        /// </summary>
+        public void UploadMeshData()
+        {
+            m_mesh.UploadMeshData(true);
         }
 
         /// <summary>
@@ -184,6 +260,14 @@ namespace sereno
         public Vector3Int Density
         {
             get{ return GetDisplayableSize(); }
+        }
+
+        /// <summary>
+        /// The VTKParser in use
+        /// </summary>
+        public VTKParser Parser
+        {
+            get{ return m_parser;}
         }
     }
 }
