@@ -8,7 +8,7 @@ Material:
   m_PrefabInternal: {fileID: 0}
   m_Name: OceanMaterial
   m_Shader: {fileID: 4800000, guid: a1c7b54a35fb84752af544ad9450202a, type: 3}
-  m_ShaderKeywords: PLANE_ON SPHERE_ON TEXCOORD7_ON
+  m_ShaderKeywords: TEXCOORD7_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0

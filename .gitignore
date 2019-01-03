@@ -1,0 +1,9 @@
+.vs
+obj
+*.sln
+*.csproj
+Temp
+UWP
+Temp
+Packages
+Library

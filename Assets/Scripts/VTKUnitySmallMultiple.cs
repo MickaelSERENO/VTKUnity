@@ -108,8 +108,8 @@ namespace sereno
                 if(i != m_colorID)
                     ColorMaterial.DisableKeyword($"TEXCOORD{i}_ON");
             ColorMaterial.EnableKeyword($"TEXCOORD{m_colorID}_ON");
-            PlaneEnabled  = true;
-            SphereEnabled = true;
+            PlaneEnabled  = false;
+            SphereEnabled = false;
             return true;
         }
 

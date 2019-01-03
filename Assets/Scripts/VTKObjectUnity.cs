@@ -48,7 +48,8 @@ namespace sereno
         void Start() 
         {
             //Parse
-            m_parser = new VTKParser(FilePath);
+            Debug.Log($"{Application.streamingAssetsPath}/{FilePath}");
+            m_parser = new VTKParser($"{Application.streamingAssetsPath}/{FilePath}");
             if(!m_parser.Parse())
             {
                 Debug.Log("Error at parsing the dataset");
@@ -66,12 +67,22 @@ namespace sereno
             Vector3Int          density = Density;
             Vector3[]           pts     = new Vector3[density.x*density.y*density.z];
 
-            for(int i = 0; i < density.x; i++)
+            //Determine the positions for "normalizing" the object (the biggest axis of the object at "size = 1")
+            Vector3             minPos  = new Vector3((float)((density.x / 2) * ptsDesc.Size[0] / density.x * ptsDesc.Spacing[0]),
+                                                      (float)((density.y / 2) * ptsDesc.Size[1] / density.y * ptsDesc.Spacing[1]),
+                                                      (float)((density.z / 2) * ptsDesc.Size[2] / density.z * ptsDesc.Spacing[2]));
+            Vector3             maxPos  = new Vector3((float)((density.x-1+density.x / 2) * ptsDesc.Size[0] / density.x * ptsDesc.Spacing[0]),
+                                                      (float)((density.y-1+density.y / 2) * ptsDesc.Size[1] / density.y * ptsDesc.Spacing[1]),
+                                                      (float)((density.z-1+density.z / 2) * ptsDesc.Size[2] / density.z * ptsDesc.Spacing[2]));
+
+            float               maxAxis = Math.Max(maxPos.x-minPos.x, Math.Max(maxPos.y-minPos.y, maxPos.z-minPos.z));
+
+            for (int i = 0; i < density.x; i++)
                 for(int j = 0; j < density.y; j++)
                     for(int k = 0; k < density.z; k++)
-                        pts[i+density.x*j+density.x*density.y*k] = new Vector3((float)((i-density.x/2)*ptsDesc.Size[0]/density.x*ptsDesc.Spacing[0]), 
-                                                                               (float)((j-density.y/2)*ptsDesc.Size[1]/density.y*ptsDesc.Spacing[1]),
-                                                                               (float)((k-density.z/2)*ptsDesc.Size[2]/density.z*ptsDesc.Spacing[2]));
+                        pts[i+density.x*j+density.x*density.y*k] = new Vector3((float)((i-density.x/2)*ptsDesc.Size[0]/density.x*ptsDesc.Spacing[0])/maxAxis, 
+                                                                               (float)((j-density.y/2)*ptsDesc.Size[1]/density.y*ptsDesc.Spacing[1])/maxAxis,
+                                                                               (float)((k-density.z/2)*ptsDesc.Size[2]/density.z*ptsDesc.Spacing[2])/maxAxis);
 
             //The element buffer
             int[] triangles = new int[(density.x-1)*(density.y-1)*(density.z-1)*36];
@@ -84,35 +95,35 @@ namespace sereno
                         int offset = (i + j*(density.x-1) + k*(density.x-1)*(density.y-1))*36;
 
                         //Front
-                        triangles[offset   ] = i   + j    *density.x + k   *density.x*density.y;
-                        triangles[offset+1 ] = i+1 + j    *density.x + k   *density.x*density.y;
+                        triangles[offset   ] = i+1 + j    *density.x + k   *density.x*density.y;
+                        triangles[offset+1 ] = i   + j    *density.x + k   *density.x*density.y;
                         triangles[offset+2 ] = i+1 + (j+1)*density.x + k   *density.x*density.y;
-                        triangles[offset+3 ] = i   + j    *density.x + k   *density.x*density.y;
-                        triangles[offset+4 ] = i+1 + (j+1)*density.x + k   *density.x*density.y;
+                        triangles[offset+3 ] = i+1 + (j+1)*density.x + k   *density.x*density.y;
+                        triangles[offset+4 ] = i   + j    *density.x + k   *density.x*density.y;
                         triangles[offset+5 ] = i   + (j+1)*density.x + k   *density.x*density.y;
 
                         //Back
-                        triangles[offset+6 ] = i   + j    *density.x + (k+1)*density.x*density.y;
-                        triangles[offset+7 ] = i+1 + (j+1)*density.x + (k+1)*density.x*density.y;
+                        triangles[offset+6 ] = i+1 + (j+1)*density.x + (k+1)*density.x*density.y;
+                        triangles[offset+7 ] = i   + j    *density.x + (k+1)*density.x*density.y;
                         triangles[offset+8 ] = i+1 + j    *density.x + (k+1)*density.x*density.y;
-                        triangles[offset+9 ] = i   + j    *density.x + (k+1)*density.x*density.y;
-                        triangles[offset+10] = i   + (j+1)*density.x + (k+1)*density.x*density.y;
+                        triangles[offset+9 ] = i   + (j+1)*density.x + (k+1)*density.x*density.y;
+                        triangles[offset+10] = i   + j    *density.x + (k+1)*density.x*density.y;
                         triangles[offset+11] = i+1 + (j+1)*density.x + (k+1)*density.x*density.y;
 
                         //Left
-                        triangles[offset+12] = i + j    *density.x + (k+1)*density.x*density.y;
-                        triangles[offset+13] = i + j    *density.x + k    *density.x*density.y;
+                        triangles[offset+12] = i + j    *density.x + k    *density.x*density.y;
+                        triangles[offset+13] = i + j    *density.x + (k+1)*density.x*density.y;
                         triangles[offset+14] = i + (j+1)*density.x + (k+1)*density.x*density.y;
-                        triangles[offset+15] = i + j    *density.x + k    *density.x*density.y;
-                        triangles[offset+16] = i + (j+1)*density.x + k    *density.x*density.y;
+                        triangles[offset+15] = i + (j+1)*density.x + k    *density.x*density.y;
+                        triangles[offset+16] = i + j    *density.x + k    *density.x*density.y;
                         triangles[offset+17] = i + (j+1)*density.x + (k+1)*density.x*density.y;
 
                         //Right
-                        triangles[offset+18] = (i+1) + j    *density.x + k    *density.x*density.y;
-                        triangles[offset+19] = (i+1) + j    *density.x + (k+1)*density.x*density.y;
+                        triangles[offset+18] = (i+1) + j    *density.x + (k+1)*density.x*density.y;
+                        triangles[offset+19] = (i+1) + j    *density.x + k    *density.x*density.y;
                         triangles[offset+20] = (i+1) + (j+1)*density.x + (k+1)*density.x*density.y;
-                        triangles[offset+21] = (i+1) + (j+1)*density.x + k    *density.x*density.y;
-                        triangles[offset+22] = (i+1) + j    *density.x + k    *density.x*density.y;
+                        triangles[offset+21] = (i+1) + j    *density.x + k    *density.x*density.y;
+                        triangles[offset+22] = (i+1) + (j+1)*density.x + k    *density.x*density.y;
                         triangles[offset+23] = (i+1) + (j+1)*density.x + (k+1)*density.x*density.y;
 
                         //Top
@@ -127,8 +138,8 @@ namespace sereno
                         triangles[offset+30] = (i+1) + j*density.x + k    *density.x*density.y;
                         triangles[offset+31] = i     + j*density.x + (k+1)*density.x*density.y;
                         triangles[offset+32] = i     + j*density.x + k    *density.x*density.y;
-                        triangles[offset+34] = (i+1) + j*density.x + (k+1)*density.x*density.y;
                         triangles[offset+33] = (i+1) + j*density.x + k    *density.x*density.y;
+                        triangles[offset+34] = (i+1) + j*density.x + (k+1)*density.x*density.y;
                         triangles[offset+35] = i     + j*density.x + (k+1)*density.x*density.y;
                     }
                 }
