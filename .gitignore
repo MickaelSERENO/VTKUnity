@@ -2,6 +2,7 @@
 obj
 *.sln
 *.csproj
+*.meta
 Temp
 UWP
 Temp
