@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-using sereno;
+using Sereno;
 
-namespace sereno
+namespace Sereno
 {
     public class VTKUnitySmallMultiple : MonoBehaviour 
     {
@@ -39,6 +39,10 @@ namespace sereno
         /// </summary>
         private bool m_sphereEnabled = false;
 
+        //The color needed
+        private static readonly LABColor coldColor  = new LABColor(new Color(59.0f / 255.0f, 76.0f / 255.0f, 192.0f / 255.0f, 1.0f));
+        private static readonly LABColor warmColor  = new LABColor(new Color(180.0f / 255.0f, 4.0f / 255.0f, 38.0f / 255.0f, 1.0f));
+        private static readonly LABColor whiteColor = new LABColor(XYZColor.Reference);
 
         // Use this for initialization
         void Start() 
@@ -93,8 +97,15 @@ namespace sereno
                     {
                         UInt64 fieldOff = (UInt64)(i*offset.x + j*offset.y + k*offset.z);
                         float c = val.ReadAsFloat(fieldOff*fieldDesc[valueID].NbValuesPerTuple);
-                        c = (float)((c-min)/max);
-                        colors.Add(new Vector3(c, c, c));
+                        c = (float)((c - min) / max);
+
+                        //LAB color space (warm - cold)
+                        Color? col = null;
+                        if(c < 0.5)
+                            col = LABColor.Lerp(coldColor, whiteColor, 2.0f*c).ToXYZ().ToRGB();
+                        else
+                            col = LABColor.Lerp(whiteColor, warmColor, 2.0f*(c-0.5f)).ToXYZ().ToRGB();
+                        colors.Add(new Vector3(col.Value.r, col.Value.g, col.Value.b));
                     }
                 }
             }
@@ -109,7 +120,7 @@ namespace sereno
                     ColorMaterial.DisableKeyword($"TEXCOORD{i}_ON");
             ColorMaterial.EnableKeyword($"TEXCOORD{m_colorID}_ON");
             PlaneEnabled  = false;
-            SphereEnabled = false;
+            SphereEnabled = true;
             return true;
         }
 

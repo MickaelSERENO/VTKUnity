@@ -208,7 +208,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SmallMultiplePrefab: {fileID: 114407509236823276, guid: 5a4d0abb1578c466aa9629b10a6445e5,
     type: 2}
-  DesiredDensity: 32
+  DesiredDensity: 128
   FilePath: Agulhas_10_resampled.vtk
 --- !u!4 &1239556235
 Transform:

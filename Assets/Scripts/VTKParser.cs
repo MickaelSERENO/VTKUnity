@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace sereno
+namespace Sereno
 {
     /// <summary>
     /// Callback function for getting field value descriptor.

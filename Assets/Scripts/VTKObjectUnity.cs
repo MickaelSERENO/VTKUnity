@@ -1,12 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using sereno;
 using System;
 using System.Runtime.InteropServices;
 
 
-namespace sereno
+namespace Sereno
 {
     public class VTKObjectUnity : MonoBehaviour 
     {
@@ -159,7 +158,8 @@ namespace sereno
             for(Int32 i = 0; i < 8; i++)
                 m_availableUVIDs.Add(i);
 
-            CreatePointFieldSmallMultiple(1);
+            //Display data number 3
+            CreatePointFieldSmallMultiple(2);
         }
         
         // Update is called once per frame
