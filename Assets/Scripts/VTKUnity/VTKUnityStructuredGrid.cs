@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 
 namespace Sereno
 {
-    public class VTKObjectUnity : MonoBehaviour 
+    public class VTKUnityStructuredGrid : MonoBehaviour 
     {
         /// <summary>
         /// The VTKParser of this dataset
@@ -39,26 +39,25 @@ namespace Sereno
         /// </summary>
         public UInt32 DesiredDensity;
 
-        /// <summary>
-        /// The file path
-        /// </summary>
-        public string FilePath;
-
-        void Start() 
+        void Start()
         {
-            //Parse
-            Debug.Log($"{Application.streamingAssetsPath}/{FilePath}");
-            m_parser = new VTKParser($"{Application.streamingAssetsPath}/{FilePath}");
-            if(!m_parser.Parse())
-            {
-                Debug.Log("Error at parsing the dataset");
-                return;
-            }
+
+        }
+
+        /// <summary>
+        /// Initialize the StructuredGrid representation
+        /// </summary>
+        /// <param name="parser">The VKTParser to use.
+        /// It should not be closed while this object is intented to being modified (e.g adding small multiples)</param>
+        /// <returns></returns>
+        public bool Init(VTKParser parser)
+        {
+            m_parser = parser;
 
             if(m_parser.GetDatasetType() != VTKDatasetType.VTK_STRUCTURED_POINTS)
             {
                 Debug.Log("Error: The dataset should be a structured points dataset");
-                return;
+                return false;
             }
 
             //Get the points and modify the points / normals buffer
@@ -158,8 +157,7 @@ namespace Sereno
             for(Int32 i = 0; i < 8; i++)
                 m_availableUVIDs.Add(i);
 
-            //Display data number 3
-            CreatePointFieldSmallMultiple(2);
+            return true;
         }
         
         // Update is called once per frame

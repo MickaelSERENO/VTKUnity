@@ -25,9 +25,9 @@ namespace Sereno
         private Int32 m_colorID = -1;
 
         /// <summary>
-        /// The UVID in use
+        /// The material in use (copy from the Material setted in the Unity Editor)
         /// </summary>
-        private Int32 m_uvID = -1;
+        private Material m_material;
 
         /// <summary>
         /// Enable the clipping plane
@@ -52,15 +52,15 @@ namespace Sereno
         // Update is called once per frame
         void Update()
         {
-            if(m_mesh != null && ColorMaterial != null)
+            if(m_mesh != null && m_material != null)
             {
-                Graphics.DrawMesh(m_mesh, transform.localToWorldMatrix, ColorMaterial, 1);
+                Graphics.DrawMesh(m_mesh, transform.localToWorldMatrix, m_material, 1);
             }
         }
 
         public bool InitFromPointField(VTKParser parser, Mesh mesh, Int32 uvID, Int32 valueID, Vector3Int offset, Vector3Int density)
         {
-            m_uvID    = uvID;
+            m_material = new Material(ColorMaterial);
 
             //Check the ID
             if(uvID > 7)
@@ -114,11 +114,11 @@ namespace Sereno
             m_mesh.UploadMeshData(false);
             m_colorID = uvID;
 
-            
-            for(int i = 0; i < 9; i++)
+
+            for(int i = 0; i < 8; i++)
                 if(i != m_colorID)
-                    ColorMaterial.DisableKeyword($"TEXCOORD{i}_ON");
-            ColorMaterial.EnableKeyword($"TEXCOORD{m_colorID}_ON");
+                    m_material.DisableKeyword($"TEXCOORD{i}_ON");
+            m_material.EnableKeyword($"TEXCOORD{m_colorID}_ON");
             PlaneEnabled  = false;
             SphereEnabled = true;
             return true;
@@ -134,9 +134,9 @@ namespace Sereno
             {
                 m_planeEnabled = value;
                 if (value)
-                    ColorMaterial.EnableKeyword("PLANE_ON");
+                    m_material.EnableKeyword("PLANE_ON");
                 else
-                    ColorMaterial.DisableKeyword("PLANE_ON");
+                    m_material.DisableKeyword("PLANE_ON");
             }
         }
 
@@ -150,10 +150,46 @@ namespace Sereno
             {
                 m_sphereEnabled = value;
                 if (value)
-                    ColorMaterial.EnableKeyword("SPHERE_ON");
+                    m_material.EnableKeyword("SPHERE_ON");
                 else
-                    ColorMaterial.DisableKeyword("SPHERE_ON");
+                    m_material.DisableKeyword("SPHERE_ON");
             }
+        }
+
+        /// <summary>
+        /// The clipping sphere radius
+        /// </summary>
+        public float SphereRadius
+        {
+            get { return m_material.GetFloat("_SphereRadius");}
+            set { m_material.SetFloat("_SphereRadius", value);}
+        }
+
+        /// <summary>
+        /// The clipping sphere position
+        /// </summary>
+        public Vector3 SpherePosition
+        {
+            get { return m_material.GetVector("_SpherePosition"); }
+            set { m_material.SetVector("_SpherePosition", value); }
+        }
+
+        /// <summary>
+        /// The clipping plane position
+        /// </summary>
+        public Vector3 PlanePosition
+        {
+            get { return m_material.GetVector("_PlanePosition"); }
+            set { m_material.SetVector("_PlanePosition", value); }
+        }
+
+        /// <summary>
+        /// The clipping plane normal
+        /// </summary>
+        public Vector3 PlaneNormal
+        {
+            get { return m_material.GetVector("_PlaneNormal"); }
+            set { m_material.SetVector("_PlaneNormal", value); }
         }
 
         /// <summary>
@@ -161,7 +197,7 @@ namespace Sereno
         /// </summary>
         public Int32 UVID
         {
-            get { return m_uvID; }
+            get { return m_colorID; }
         }
     }
 }

@@ -57,7 +57,6 @@
 			{
 				float4 vertex   : SV_POSITION;
                 float4 color    : COLOR;
-				float3 position : TEXCOORD1;
 #ifdef PLANE_ON
 				float dotPlane  : TEXCOORD2;
 #endif
@@ -78,7 +77,7 @@
 				o.vertex = UnityObjectToClipPos(v.vertex);
 				o.color  = v.color;
 
-				float4 pos4 = mul(unity_ObjectToWorld, v.vertex);
+				float4 pos4 = v.vertex;//mul(unity_ObjectToWorld, v.vertex);
 				float3 pos  = pos4.xyz / pos4.w;
 
 #ifdef PLANE_ON
