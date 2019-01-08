@@ -30,6 +30,16 @@ namespace Sereno
         private List<Int32> m_availableUVIDs;
 
         /// <summary>
+        /// The minimum position of the mesh
+        /// </summary>
+        private Vector3 m_minPos;
+
+        /// <summary>
+        /// The maximum position of the mesh
+        /// </summary>
+        private Vector3 m_maxPos;
+
+        /// <summary>
         /// The small multiple prefab to represent sub data.
         /// </summary>
         public VTKUnitySmallMultiple SmallMultiplePrefab;
@@ -81,6 +91,10 @@ namespace Sereno
                         pts[i+density.x*j+density.x*density.y*k] = new Vector3((float)((i-density.x/2)*ptsDesc.Size[0]/density.x*ptsDesc.Spacing[0])/maxAxis, 
                                                                                (float)((j-density.y/2)*ptsDesc.Size[1]/density.y*ptsDesc.Spacing[1])/maxAxis,
                                                                                (float)((k-density.z/2)*ptsDesc.Size[2]/density.z*ptsDesc.Spacing[2])/maxAxis);
+
+            //Store the maximas positions
+            m_minPos = pts[0];
+            m_maxPos = pts[pts.Length-1];
 
             //The element buffer
             int[] triangles = new int[(density.x-1)*(density.y-1)*(density.z-1)*36];
@@ -227,6 +241,19 @@ namespace Sereno
         }
 
         /// <summary>
+        /// Get the point field name at ID = dataID
+        /// </summary>
+        /// <param name="dataID">The dataID</param>
+        /// <returns>The point field name ID #dataID</returns>
+        public string GetPointFieldName(UInt32 dataID)
+        {
+            List<VTKFieldValue> l = m_parser.GetPointFieldValueDescriptors();
+            if(l.Count <= dataID)
+                return null;
+            return l[(int)dataID].Name;
+        }
+
+        /// <summary>
         /// Upload the mesh data to the GPU and remove the CPU double buffered memory allocated
         /// It permits to gain the CPU memory allocation
         /// </summary>
@@ -277,6 +304,22 @@ namespace Sereno
         public VTKParser Parser
         {
             get{ return m_parser;}
+        }
+
+        /// <summary>
+        /// Get the minimum mesh position
+        /// </summary>
+        public Vector3 MinMeshPos
+        {
+            get{ return m_minPos;}
+        }
+
+        /// <summary>
+        /// Get the maximum mesh position
+        /// </summary>
+        public Vector3 MaxMeshPos
+        {
+            get{ return m_maxPos;}
         }
     }
 }

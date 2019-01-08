@@ -1,8 +1,9 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 namespace Sereno
-{ 
+{
     /// <summary>
     /// The Ocean game object coordinating everything
     /// </summary>
@@ -24,9 +25,19 @@ namespace Sereno
         private List<VTKUnitySmallMultiple> m_smallMultiples;
 
         /// <summary>
+        /// The small multiple text meshes created
+        /// </summary>
+        private List<TextMesh> m_textSMMeshes;
+
+        /// <summary>
         /// The StructuredGrid to use
         /// </summary>
         public VTKUnityStructuredGrid StructuredGrid;
+
+        /// <summary>
+        /// The Small multiple text game object to use
+        /// </summary>
+        public TextMesh SmallMultipleTextProperty; 
 
         /// <summary>
         /// The Ocean file path to use
@@ -50,25 +61,47 @@ namespace Sereno
                 if(!m_oceanGrid.Init(m_parser))
                     return;
 
+                Vector3 size = m_oceanGrid.MaxMeshPos - m_oceanGrid.MinMeshPos;
+
                 //Generate the small multiples
                 m_smallMultiples = new List<VTKUnitySmallMultiple>();
+                m_textSMMeshes   = new List<TextMesh>();
+
                 m_smallMultiples.Add(m_oceanGrid.CreatePointFieldSmallMultiple(2));
                 m_smallMultiples.Add(m_oceanGrid.CreatePointFieldSmallMultiple(3));
                 m_smallMultiples.Add(m_oceanGrid.CreatePointFieldSmallMultiple(4));
 
-                //Place them correctly
-                for(int i = 0; i < m_smallMultiples.Count; i++)
+                //Place them correctly and associate the text
+                for (int i = 0; i < m_smallMultiples.Count; i++)
                 {
+                    //Small multiple
                     var c = m_smallMultiples[i];
-                    c.transform.position = new Vector3(3*i, 0, 0);
+                    c.transform.parent        = this.transform;
+                    c.transform.localPosition = new Vector3(2*i, 0, 0);
+                    c.transform.localScale    = new Vector3(1.0f, 1.0f, 1.0f);
                     c.transform.Rotate(new Vector3(0.0f, 1.0f, 0.0f), 90);
+
+                    //Text
+                    TextMesh smText = Instantiate(SmallMultipleTextProperty);
+                    m_textSMMeshes.Add(smText);
+                    smText.text = m_oceanGrid.GetPointFieldName((UInt32)i+2);
+                    smText.transform.parent = c.transform;
+                    smText.transform.localPosition = new Vector3(0.0f, size.y + 0.5f, 0.0f);
+                    smText.transform.localScale    = new Vector3(0.1f, 0.1f, 0.1f);
+                    smText.transform.localRotation = new Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
                 }
             }
         }
 
-        private void Update()
+        void LateUpdate()
         {
-            Debug.Log(1.0f/Time.deltaTime);
+            //Make text facing the camera
+            Vector3 camPos = Camera.main.transform.position;
+            foreach (var t in m_textSMMeshes)
+            {
+                t.transform.LookAt(new Vector3(camPos.x, t.transform.position.y, camPos.z));
+                t.transform.Rotate(new Vector3(0.0f, 1.0f, 0.0f), 180);
+            }
         }
 
         private void OnDestroy()
