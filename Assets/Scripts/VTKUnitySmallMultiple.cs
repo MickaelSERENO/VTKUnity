@@ -88,7 +88,6 @@ namespace Sereno
                 min = Math.Min(min, val.ReadAsDouble(i*fieldDesc[valueID].NbValuesPerTuple));
             }
         
-            Debug.Log($"Value Name : {fieldDesc[valueID].Name} Min : {min}, Max : {max}");
             for(UInt32 i = 0; i < density.x; i++)
             {
                 for(UInt32 j = 0; j < density.y; j++)
@@ -120,7 +119,7 @@ namespace Sereno
                     m_material.DisableKeyword($"TEXCOORD{i}_ON");
             m_material.EnableKeyword($"TEXCOORD{m_colorID}_ON");
             PlaneEnabled  = false;
-            SphereEnabled = true;
+            SphereEnabled = false;
             return true;
         }
 

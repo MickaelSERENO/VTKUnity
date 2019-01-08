@@ -11,7 +11,7 @@
 	SubShader
 	{
 		Tags { "RenderType"="Opaque" }
-		LOD 256
+		LOD 50
 
 		Pass
 		{
@@ -23,7 +23,7 @@
 			#pragma shader_feature PLANE_ON
 
 			#include "UnityCG.cginc"
-
+				
 			struct appdata
 			{
 				float4 vertex : POSITION;
@@ -65,20 +65,24 @@
 #endif
 			};
 
+#ifdef PLANE_ON
 			float3 _PlaneNormal;
 			float3 _PlanePosition;
+#endif
 
+#ifdef SPHERE_ON
 			float3 _SpherePosition;
 			float  _SphereRadius;
-			
+#endif
 			v2f vert (appdata v)
 			{
 				v2f o;
 				o.vertex = UnityObjectToClipPos(v.vertex);
 				o.color  = v.color;
 
-				float4 pos4 = v.vertex;//mul(unity_ObjectToWorld, v.vertex);
-				float3 pos  = pos4.xyz / pos4.w;
+#if defined(PLANE_ON) || defined(SPHERE_ON) 
+				float3 pos = v.vertex.xyz;
+#endif
 
 #ifdef PLANE_ON
 				o.dotPlane = dot((pos - _PlanePosition), _PlaneNormal);

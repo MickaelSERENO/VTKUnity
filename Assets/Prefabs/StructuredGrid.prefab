@@ -48,9 +48,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1246339506127856}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7f1e28d708dfb451b8ef815cd20f6bbc, type: 3}
+  m_Script: {fileID: 11500000, guid: ef35bf31a1b4c38489bebd9fc2ce5a03, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   SmallMultiplePrefab: {fileID: 114407509236823276, guid: 5a4d0abb1578c466aa9629b10a6445e5,
     type: 2}
-  DesiredDensity: 64
+  DesiredDensity: 32

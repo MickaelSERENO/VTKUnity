@@ -66,6 +66,11 @@ namespace Sereno
             }
         }
 
+        private void Update()
+        {
+            Debug.Log(1.0f/Time.deltaTime);
+        }
+
         private void OnDestroy()
         {
             GameObject.Destroy(m_oceanGrid);
