@@ -579,7 +579,7 @@ PlayerSettings:
   scriptingDefineSymbols: {}
   platformArchitecture: {}
   scriptingBackend:
-    Metro: 1
+    Metro: 2
   il2cppCompilerConfiguration: {}
   incrementalIl2cppBuild: {}
   allowUnsafeCode: 1
@@ -608,7 +608,13 @@ PlayerSettings:
   metroSplashScreenBackgroundColor: {r: 0.12941177, g: 0.17254902, b: 0.21568628,
     a: 1}
   metroSplashScreenUseBackgroundColor: 0
-  platformCapabilities: {}
+  platformCapabilities:
+    WindowsStoreApps:
+      HumanInterfaceDevice: False
+      InternetClient: False
+      InternetClientServer: False
+      PrivateNetworkClientServer: False
+      SpatialPerception: True
   metroFTAName: 
   metroFTAFileTypes: []
   metroProtocolName: 

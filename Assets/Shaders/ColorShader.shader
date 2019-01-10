@@ -1,4 +1,6 @@
-﻿Shader "Sereno/DefaultColor"
+﻿// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
+
+Shader "Sereno/DefaultColor"
 {
 	Properties
 	{
@@ -81,7 +83,8 @@
 				o.color  = v.color;
 
 #if defined(PLANE_ON) || defined(SPHERE_ON) 
-				float3 pos = v.vertex.xyz;
+				float4 pMV = mul(unity_ObjectToWorld, v.vertex);
+				float3 pos = pMV.xyz / pMV.w;
 #endif
 
 #ifdef PLANE_ON

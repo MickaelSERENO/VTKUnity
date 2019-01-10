@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_Name: OceanMaterial
-  m_Shader: {fileID: 4800000, guid: a1c7b54a35fb84752af544ad9450202a, type: 3}
+  m_Shader: {fileID: 4800000, guid: e054b1b5e20a4c74b9026eee55341218, type: 3}
   m_ShaderKeywords: SPHERE_ON TEXCOORD6_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -68,7 +68,7 @@ Material:
     - _Parallax: 0.02
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
-    - _SphereRadius: 1
+    - _SphereRadius: 0.5
     - _SrcBlend: 1
     - _UVSec: 0
     - _ZWrite: 1
@@ -77,4 +77,4 @@ Material:
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _PlaneNormal: {r: 0.70710677, g: 0.70710677, b: 0, a: 1}
     - _PlanePosition: {r: 0, g: 0, b: 0, a: 1}
-    - _SpherePosition: {r: 0, g: 0, b: 0, a: 1}
+    - _SpherePosition: {r: 0.5, g: 0, b: 0, a: 1}

@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using System;
+using UnityEngine.UI;
 
 namespace Sereno
 {
@@ -44,7 +45,10 @@ namespace Sereno
         /// </summary>
         public string FilePath;
 
-	    void Start()
+        public GameObject MotionControllers;
+        private ClippingPlaneControl cpControl;
+
+        void Start()
         {
             //Parse the VTK object
             m_parser = new VTKParser($"{Application.streamingAssetsPath}/{FilePath}");
@@ -76,21 +80,57 @@ namespace Sereno
                 {
                     //Small multiple
                     var c = m_smallMultiples[i];
-                    c.transform.parent        = this.transform;
-                    c.transform.localPosition = new Vector3(2*i, 0, 0);
-                    c.transform.localScale    = new Vector3(1.0f, 1.0f, 1.0f);
-                    c.transform.Rotate(new Vector3(0.0f, 1.0f, 0.0f), 90);
+                    c.transform.parent = this.transform;
+                    c.transform.localPosition = new Vector3(2 * i, 0, 0);
+                    c.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
+                    //c.SphereEnabled = true;
+                    c.PlaneEnabled  = true;
+                    //c.transform.Rotate(new Vector3(0.0f, 1.0f, 0.0f), 90);
 
                     //Text
                     TextMesh smText = Instantiate(SmallMultipleTextProperty);
                     m_textSMMeshes.Add(smText);
-                    smText.text = m_oceanGrid.GetPointFieldName((UInt32)i+2);
+                    smText.text = m_oceanGrid.GetPointFieldName((UInt32)i + 2);
                     smText.transform.parent = c.transform;
                     smText.transform.localPosition = new Vector3(0.0f, size.y + 0.5f, 0.0f);
-                    smText.transform.localScale    = new Vector3(0.1f, 0.1f, 0.1f);
+                    smText.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
                     smText.transform.localRotation = new Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
                 }
             }
+
+            //>>>>>>>>>>>>>>>>>>>>added by Mao LIN>>>>>>>>>>>>>>>>>>>>>>>>>
+            cpControl = this.MotionControllers.GetComponent<ClippingPlaneControl>();
+            //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        }
+
+        private void Update()
+        {
+            string debugMsg = "";
+
+            //>>>>>>>>>>>>>>>>>>>>added by Mao LIN>>>>>>>>>>>>>>>>>>>>>>>>>
+            for (int i = 0; i < m_smallMultiples.Count; i++)
+            {
+                
+                VTKUnitySmallMultiple sm = m_smallMultiples[i];
+                if(sm.PlaneEnabled && cpControl.IsPlaneActive())
+                {
+                    sm.PlanePosition = cpControl.GetPlanePosition(); //- sm.transform.position;
+                    sm.PlaneNormal = -1*cpControl.GetPlaneNormal();
+
+                    Debug.DrawRay(cpControl.GetPlanePosition(), cpControl.GetPlaneNormal(), Color.green);
+                    debugMsg += "SM " + i + ": [Plane] Position=" + sm.PlanePosition + ", Normal=" + sm.PlaneNormal + "\n";
+                }
+                if(sm.SphereEnabled)
+                {
+                    sm.SpherePosition = SphereControl.Instance.GetSpherePosition();// - sm.transform.position;
+                    sm.SphereRadius = 0.1f;
+
+                    debugMsg += "SM " + i + ": [Sphere] Position=" + sm.SpherePosition + ", Radius=" + sm.SphereRadius + "\n";
+                }
+            }
+
+            GameObject.FindGameObjectWithTag("DebugText").GetComponent<Text>().text = debugMsg;
+            //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         }
 
         void LateUpdate()
@@ -107,6 +147,18 @@ namespace Sereno
         private void OnDestroy()
         {
             GameObject.Destroy(m_oceanGrid);
+        }
+
+        public void onPlaneButton(bool pressed)
+        {
+            foreach (var c in m_smallMultiples)
+                c.PlaneEnabled = pressed;
+        }
+
+        public void onSphereButton(bool pressed)
+        {
+            foreach (var c in m_smallMultiples)
+                c.SphereEnabled = pressed;
         }
     }
 }
