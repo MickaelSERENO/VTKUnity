@@ -1,25 +1,15 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1001 &100100000
-Prefab:
-  m_ObjectHideFlags: 1
-  serializedVersion: 2
-  m_Modification:
-    m_TransformParent: {fileID: 0}
-    m_Modifications: []
-    m_RemovedComponents: []
-  m_SourcePrefab: {fileID: 0}
-  m_RootGameObject: {fileID: 1551373057344812}
-  m_IsPrefabAsset: 1
---- !u!1 &1551373057344812
+--- !u!1 &3597941415820485819
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4902958825644452}
-  - component: {fileID: 114892266820595946}
+  - component: {fileID: 6864018157762550791}
+  - component: {fileID: 4415225771301622753}
   m_Layer: 0
   m_Name: SmallMultiples
   m_TagString: Untagged
@@ -27,12 +17,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4902958825644452
+--- !u!4 &6864018157762550791
 Transform:
-  m_ObjectHideFlags: 1
+  m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1551373057344812}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3597941415820485819}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -40,15 +31,20 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &114892266820595946
+--- !u!114 &4415225771301622753
 MonoBehaviour:
-  m_ObjectHideFlags: 1
+  m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1551373057344812}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3597941415820485819}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b4bdeaebe941e5847bc71ee9b85b3f71, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   ColorMaterial: {fileID: 2100000, guid: 41d71bb2eb7b887429c3daf009b12d6b, type: 2}
+  Outline: {fileID: 1768162676121256, guid: 4b12c845de844b040a436ae1138e1a94, type: 3}
+  MinMaxLine: {fileID: 1410013266988338, guid: ac5426dd74beae84296afb040cb19abc, type: 3}
+  MinMaxLabel: {fileID: 812699988368368388, guid: 42272974fe2bef2499e3d51f377df45f,
+    type: 3}

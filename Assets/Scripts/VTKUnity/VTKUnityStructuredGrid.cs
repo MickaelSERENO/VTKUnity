@@ -30,6 +30,11 @@ namespace Sereno
         private List<Int32> m_availableUVIDs;
 
         /// <summary>
+        /// The mask in use
+        /// </summary>
+        private unsafe byte* m_mask;
+
+        /// <summary>
         /// The minimum position of the mesh
         /// </summary>
         private Vector3 m_minPos;
@@ -59,10 +64,12 @@ namespace Sereno
         /// </summary>
         /// <param name="parser">The VKTParser to use.
         /// It should not be closed while this object is intented to being modified (e.g adding small multiples)</param>
+        /// <param name="mask">The mask to apply point per point. if mask==null, we do not use it</param>
         /// <returns></returns>
-        public bool Init(VTKParser parser)
+        public unsafe bool Init(VTKParser parser, byte* mask=null)
         {
             m_parser = parser;
+            m_mask   = mask;
 
             if(m_parser.GetDatasetType() != VTKDatasetType.VTK_STRUCTURED_POINTS)
             {
@@ -85,9 +92,9 @@ namespace Sereno
 
             float               maxAxis = Math.Max(maxPos.x-minPos.x, Math.Max(maxPos.y-minPos.y, maxPos.z-minPos.z));
 
-            for (int i = 0; i < density.x; i++)
+            for(int k = 0; k < density.z; k++)
                 for(int j = 0; j < density.y; j++)
-                    for(int k = 0; k < density.z; k++)
+                    for(int i = 0; i < density.x; i++)
                         pts[i+density.x*j+density.x*density.y*k] = new Vector3((float)((i-density.x/2)*ptsDesc.Size[0]/density.x*ptsDesc.Spacing[0])/maxAxis, 
                                                                                (float)((j-density.y/2)*ptsDesc.Size[1]/density.y*ptsDesc.Spacing[1])/maxAxis,
                                                                                (float)((k-density.z/2)*ptsDesc.Size[2]/density.z*ptsDesc.Spacing[2])/maxAxis);
@@ -97,14 +104,30 @@ namespace Sereno
             m_maxPos = pts[pts.Length-1];
 
             //The element buffer
+            Vector3Int offsetMask = new Vector3Int((int)(ptsDesc.Size[0]/density.x),
+                                                   (int)(ptsDesc.Size[1]/density.y*ptsDesc.Size[0]),
+                                                   (int)(ptsDesc.Size[2]/density.z*ptsDesc.Size[1]*ptsDesc.Size[0]));
             int[] triangles = new int[(density.x-1)*(density.y-1)*(density.z-1)*36];
-            for(int i = 0; i < density.x-1; i++)
+            for(int k = 0; k < density.z-1; k++)
             {
                 for(int j = 0; j < density.y-1; j++)
                 {
-                    for(int k = 0; k < density.z-1; k++)
+                    for(int i = 0; i < density.x-1; i++)
                     {
                         int offset = (i + j*(density.x-1) + k*(density.x-1)*(density.y-1))*36;
+                        //Test the mask
+                        //If we are encountering a missing mask, put the triangles to to point "0" (i.e empty triangle) 
+                        //And go at the end of the loop
+                        if(mask != null)
+                            for(int k2=0; k2<2; k2++)
+                                for(int j2=0; j2<2; j2++)
+                                    for(int i2=0; i2<2; i2++)
+                                        if(*(mask + (i+i2)*offsetMask.x + (j+j2)*offsetMask.y + (k+k2)*offsetMask.z) == 0)
+                                        {
+                                            for(int t=0; t<36; t++)
+                                                triangles[offset+t]=0;
+                                            goto endTriangleLoop;
+                                        }
 
                         //Front
                         triangles[offset   ] = i+1 + j    *density.x + k   *density.x*density.y;
@@ -153,6 +176,10 @@ namespace Sereno
                         triangles[offset+33] = (i+1) + j*density.x + k    *density.x*density.y;
                         triangles[offset+34] = (i+1) + j*density.x + (k+1)*density.x*density.y;
                         triangles[offset+35] = i     + j*density.x + (k+1)*density.x*density.y;
+
+                        //End the the triangle loop
+                    endTriangleLoop:
+                        continue;
                     }
                 }
             }
@@ -191,15 +218,18 @@ namespace Sereno
             VTKUnitySmallMultiple sm      = GameObject.Instantiate(SmallMultiplePrefab);
             Vector3Int            density = Density;
 
-            if(sm.InitFromPointField(m_parser, m_mesh, m_availableUVIDs[m_availableUVIDs.Count-1], dataID, 
-                                     new Vector3Int((int)(ptsDesc.Size[0]/density.x), 
-                                                    (int)(ptsDesc.Size[1]/density.y*ptsDesc.Size[0]),
-                                                    (int)(ptsDesc.Size[2]/density.z*ptsDesc.Size[1]*ptsDesc.Size[0])),
-                                     density))
+            unsafe
             {
-                m_smallMultiples.Add(sm);
-                m_availableUVIDs.RemoveAt(m_availableUVIDs.Count-1);
-                return sm;
+                if(sm.InitFromPointField(m_parser, m_mesh, m_availableUVIDs[m_availableUVIDs.Count-1], dataID, 
+                                         new Vector3Int((int)(ptsDesc.Size[0]/density.x), 
+                                                        (int)(ptsDesc.Size[1]/density.y*ptsDesc.Size[0]),
+                                                        (int)(ptsDesc.Size[2]/density.z*ptsDesc.Size[1]*ptsDesc.Size[0])),
+                                         density, m_mask))
+                {
+                    m_smallMultiples.Add(sm);
+                    m_availableUVIDs.RemoveAt(m_availableUVIDs.Count-1);
+                    return sm;
+                }
             }
 
             Destroy(sm);

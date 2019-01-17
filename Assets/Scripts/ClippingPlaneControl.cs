@@ -1,136 +1,69 @@
-﻿using HoloToolkit.Unity.InputModule;
-using System.Collections.Generic;
+﻿using Microsoft.MixedReality.Toolkit.Core.Services;
+using Microsoft.MixedReality.Toolkit.Core.Definitions.Utilities;
 using UnityEngine;
-using UnityEngine.XR.WSA.Input;
-
+using UnityEngine.SpatialTracking;
 
 namespace Sereno
 {
     public class ClippingPlaneControl : MonoBehaviour
     {
-        public GameObject clippingPlane;
-        private Dictionary<string, MotionControllerInfo> controllerDic;
-        private int lastControllerNum;
-
-        private Dictionary<string, PanelStatus> controllerPanelStatusDic = new Dictionary<string, PanelStatus>();
-        private Vector3 panelPosition = new Vector3(0, 0.039f, 0.05f);
-
-        private string activePanelControllerKey = null;
-
-
-        /// <summary>
-        /// For storing the GameObject and status of each panel
-        /// </summary>
-        class PanelStatus
-        {
-            public GameObject panelObj;
-            public bool isOpen;
-            public bool lastStatus;
-
-            public PanelStatus(GameObject panelObj, bool isOpen)
-            {
-                this.panelObj = panelObj;
-                this.isOpen = isOpen;
-                this.lastStatus = false;
-            }
-        };
+        public  GameObject clippingPlane;
+        private GameObject planeObj;
+        private TrackedPoseDriver controller;
+        private Vector3 panelPosition  = new Vector3(0, 0.039f, 0.05f);
 
         private void Awake()
         {
-            InteractionManager.InteractionSourceUpdated += MenuInteractionHandler;
+            this.controller = GetComponent<TrackedPoseDriver>();
         }
 
-        // Use this for initialization
         private void Start()
         {
-            this.controllerDic = gameObject.GetComponent<MotionControllerVisualizer>().controllerDictionary;
-            this.lastControllerNum = controllerDic.Count;
+            //create one status record
+            planeObj = GameObject.Instantiate(this.clippingPlane);
+
+            //attach panel to hand
+            planeObj.transform.localRotation = Quaternion.identity;
+            planeObj.transform.localPosition = this.panelPosition;
+            planeObj.transform.Rotate(90, 0, 0);
+            planeObj.transform.parent = this.transform;
+            planeObj.SetActive(false);
         }
 
-        private void MenuInteractionHandler(InteractionSourceUpdatedEventArgs data)
+        private void Update()
         {
-            string key = GetControllerKey(data);
-
-            if (this.controllerPanelStatusDic.ContainsKey(key))
+            if(controller.isActiveAndEnabled)
             {
-                if (key.EndsWith("Left"))
+                foreach(var v in MixedRealityToolkit.InputSystem.DetectedControllers)
                 {
-                    PanelStatus panelStatus = this.controllerPanelStatusDic[key];
-                    if (data.state.menuPressed)
+                    if(v.ControllerHandedness == Handedness.Left && this.controller.poseSource == TrackedPoseDriver.TrackedPose.LeftPose)
                     {
-                        this.activePanelControllerKey = key;
-                        panelStatus.isOpen = true;
-                        panelStatus.panelObj.SetActive(true);
-                    }
-                    else
-                    {
-                        this.activePanelControllerKey = null;
-                        panelStatus.isOpen = false;
-                        panelStatus.panelObj.SetActive(false);
+                        if(Input.GetKey(KeyCode.Joystick1Button2))
+                        { 
+                            planeObj.SetActive(true);
+                            Debug.Log("OK");
+                        }
+                        else
+                            planeObj.SetActive(false);
+                        break;
                     }
                 }
             }
         }
 
-        private string GetControllerKey(InteractionSourceUpdatedEventArgs data)
-        {
-            return data.state.source.vendorId + "/" + data.state.source.productId + "/" + data.state.source.productVersion + "/" + data.state.source.handedness;
-        }
-
-        private void Update()
-        {
-            if (this.IsNewControllerFound())
-            {
-                foreach (KeyValuePair<string, MotionControllerInfo> kv in this.controllerDic)
-                {
-                    Debug.Log("controller count=" + controllerDic.Count + ", id=" + kv.Key + ", value=" + kv.Value.ControllerParent.name + ", id?=" + kv.Value.ControllerParent.GetInstanceID());
-
-                    if (!this.controllerPanelStatusDic.ContainsKey(kv.Key))
-                    {
-                        //create one status record
-                        GameObject panelObj = GameObject.Instantiate(this.clippingPlane);
-                        PanelStatus panelStatus = new PanelStatus(panelObj, false);
-
-                        //attach panel to hand
-                        panelObj.transform.parent = kv.Value.ControllerParent.transform;
-                        panelObj.transform.localRotation = Quaternion.identity;
-                        panelObj.transform.localPosition = this.panelPosition;
-                        panelObj.transform.Rotate(90, 0, 0);
-                        panelObj.SetActive(false);
-
-                        //register
-                        this.controllerPanelStatusDic.Add(kv.Key, panelStatus);
-                    }
-                }  
-            }
-        }
-
         public bool IsPlaneActive()
         {
-            return this.activePanelControllerKey != null;
-        }
-
-        public Vector3 GetPlaneNormal()
-        {
-            return this.controllerDic[this.activePanelControllerKey].ControllerParent.transform.up;
+            return this.controller.isActiveAndEnabled;
         }
 
         public Vector3 GetPlanePosition()
         {
-            return this.controllerPanelStatusDic[this.activePanelControllerKey].panelObj.transform.position;
+            return this.transform.position;
         }
 
-        private bool IsNewControllerFound()
+        public Vector3 GetPlaneNormal()
         {
-            if (this.controllerDic.Count != this.lastControllerNum)
-            {
-                this.lastControllerNum = this.controllerDic.Count;
-                return true;
-            }
-            else
-                return false;
+            return this.transform.up;
         }
-
     }
-
 }

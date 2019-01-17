@@ -1,4 +1,4 @@
-﻿using HoloToolkit.Unity;
+﻿/*using HoloToolkit.Unity;
 using HoloToolkit.Unity.InputModule;
 using UnityEngine;
 using UnityEngine.UI;
@@ -80,3 +80,4 @@ namespace Sereno
 
 
 
+*/
