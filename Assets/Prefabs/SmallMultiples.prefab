@@ -48,3 +48,6 @@ MonoBehaviour:
   MinMaxLine: {fileID: 1410013266988338, guid: ac5426dd74beae84296afb040cb19abc, type: 3}
   MinMaxLabel: {fileID: 812699988368368388, guid: 42272974fe2bef2499e3d51f377df45f,
     type: 3}
+  ColorScale: {fileID: 2162195915688257611, guid: 041d8d8b4b729f44fb5dbfda39e9280f,
+    type: 3}
+  m_values: []

@@ -30,6 +30,11 @@ namespace Sereno
         public TextMesh MinMaxLabel = null;
 
         /// <summary>
+        /// The color scale to display (cylinder)
+        /// </summary>
+        public GameObject ColorScale = null;
+
+        /// <summary>
         /// The mesh to use
         /// </summary>
         private Mesh m_mesh = null;
@@ -38,6 +43,11 @@ namespace Sereno
         /// The outline gameobject created from "Outline"
         /// </summary>
         private GameObject m_outline;
+
+        /// <summary>
+        /// The color scale game object
+        /// </summary>
+        private GameObject m_colorScale;
 
         /// <summary>
         /// The min-max line gameobject created from "MinMaxLine"
@@ -50,9 +60,14 @@ namespace Sereno
         private GameObject[] m_minMaxPivots     = new GameObject[2];
 
         /// <summary>
-        /// The min-max label GameObject created from "MinMaxLabel"
+        /// The min-max label GameObject created from "MinMaxLabel" displayed along the min and max lines
         /// </summary>
         private TextMesh[] m_minMaxLabel = new TextMesh[2];
+
+        /// <summary>
+        /// The min-max label GameObject created from "MinMaxLabel" displayed above and below the color scale
+        /// </summary>
+        private TextMesh[] m_minMaxTextScale = new TextMesh[2]; 
 
         /// <summary>
         /// The color to use
@@ -74,10 +89,37 @@ namespace Sereno
         /// </summary>
         private bool m_sphereEnabled = false;
 
+        /// <summary>
+        /// The minimum value found in this small multiple
+        /// </summary>
+        private float m_minVal = 0.0f;
+
+        /// <summary>
+        /// The maximum value found in this small multiple
+        /// </summary>
+        private float m_maxVal = 1.0f;
+
+        /// <summary>
+        /// The minimum amplitude to apply
+        /// </summary>
+        private float m_minRangeAmp = 0.0f;
+
+        /// <summary>
+        /// The maximum amplitude
+        /// </summary>
+        private float m_maxRangeAmp = 1.0f;
+
+        /// <summary>
+        /// The value currently in use. Size : density.x*density.y*density.z
+        /// </summary>
+        public float[] m_values = null;
+
         //The color needed
-        private static readonly LABColor coldColor  = new LABColor(new Color(59.0f / 255.0f, 76.0f / 255.0f, 192.0f / 255.0f, 1.0f));
-        private static readonly LABColor warmColor  = new LABColor(new Color(180.0f / 255.0f, 4.0f / 255.0f, 38.0f / 255.0f, 1.0f));
-        private static readonly LABColor whiteColor = new LABColor(XYZColor.Reference);
+        private static readonly Color    coldColorRGB = new Color(59.0f / 255.0f, 76.0f / 255.0f, 192.0f / 255.0f, 1.0f);
+        private static readonly Color    warmColorRGB = new Color(180.0f / 255.0f, 4.0f / 255.0f, 38.0f / 255.0f, 1.0f);
+        private static readonly LABColor coldColor    = new LABColor(coldColorRGB);
+        private static readonly LABColor warmColor    = new LABColor(warmColorRGB);
+        private static readonly LABColor whiteColor   = new LABColor(XYZColor.Reference);
 
         // Use this for initialization
         private void Start() 
@@ -93,9 +135,21 @@ namespace Sereno
             }
         }
 
+        /// <summary>
+        /// Initialize the small multiple from point field data
+        /// </summary>
+        /// <param name="parser">The VTK Parser</param>
+        /// <param name="mesh">The mesh to display</param>
+        /// <param name="uvID">The ID where to put the color data</param>
+        /// <param name="valueID">The ID of the VTKFieldPointValue</param>
+        /// <param name="offset">The offset along each axis to apply : pos = x*offset.x + y*offset.y + z*offset.z</param>
+        /// <param name="density">The density in use</param>
+        /// <param name="mask">The mask to apply along each point</param>
+        /// <returns></returns>
         public unsafe bool InitFromPointField(VTKParser parser, Mesh mesh, Int32 uvID, Int32 valueID, Vector3Int offset, Vector3Int density, byte* mask)
         {
             m_material = new Material(ColorMaterial);
+            m_values   = new float[density.x*density.y*density.z];
 
             //Check the ID
             if(uvID > 7)
@@ -121,30 +175,29 @@ namespace Sereno
                 return false;
             }
             VTKValue      val    = parser.ParseAllFieldValues(fieldDesc[valueID]);
-            List<Vector3> colors = new List<Vector3>((int)(density.x*density.y*density.z));
+            List<Vector4> colors = new List<Vector4>((int)(density.x*density.y*density.z));
 
             //Determine the minimum and maximum value and their position
-            double        max    = double.MinValue;
-            double        min    = double.MaxValue;
-            Vector3       minLoc = new Vector3();
-            Vector3       maxLoc = new Vector3();
+            m_maxVal = float.MinValue;
+            m_minVal = float.MaxValue;
+            Vector3  minLoc = new Vector3();
+            Vector3  maxLoc = new Vector3();
 
             for(UInt32 i = 0; i < val.NbValues; i++)
             {
                 if(mask != null && mask[i]==0)
                     continue;
-                double v = val.ReadAsDouble(i * fieldDesc[valueID].NbValuesPerTuple);
-                if(max < v)
+                float v = (float)val.ReadAsDouble(i * fieldDesc[valueID].NbValuesPerTuple);
+                if(m_maxVal < v)
                 {
-                    max    = v;
+                    m_maxVal    = v;
                     maxLoc = new Vector3(i%descPts.Size[0], (i/descPts.Size[0])%descPts.Size[1], i/(descPts.Size[0]*descPts.Size[1]));
                 }
-                if(min > v)
+                if(m_minVal > v)
                 {
-                    min = v;
+                    m_minVal = v;
                     minLoc = new Vector3(i % descPts.Size[0], (i / descPts.Size[0]) % descPts.Size[1], i / (descPts.Size[0] * descPts.Size[1]));
                 }
-                min = Math.Min(min, val.ReadAsDouble(i*fieldDesc[valueID].NbValuesPerTuple));
             }
 
             //Normalize the location (between 0.0 and 1.0 for the most "long" axis)
@@ -158,26 +211,31 @@ namespace Sereno
                                  (float)(l.y*descPts.Spacing[1]),
                                  (float)(l.z*descPts.Spacing[2])) + minModelPos)/maxModelDist;
                 vec[i] = l;
-                Debug.Log($"l : {l}, {l.magnitude}");
             }
 
+            Debug.Log($"Min : {m_minVal} Max : {m_maxVal}");
+
+            //Fill the color array
             maxLoc = vec[0];
             minLoc = vec[1];
+            UInt64 colorValueOff = 0;
             for(UInt32 k = 0; k < density.z; k++)
             {
                 for(UInt32 j = 0; j < density.y; j++)
                 {
-                    for (UInt32 i = 0; i < density.x; i++)
+                    for (UInt32 i = 0; i < density.x; i++, colorValueOff++)
                     {
-                        UInt64 fieldOff = (UInt64)(i*offset.x + j*offset.y + k*offset.z);
+                        UInt64 fieldOff      = (UInt64)(i*offset.x + j*offset.y + k*offset.z);
                         //Check the mask
                         if(mask != null && *(mask + fieldOff) == 0)
                         {
-                            colors.Add(new Vector3(0.0f, 0.0f, 0.0f));
+                            colors.Add(new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
+                            m_values[colorValueOff] = m_minVal;
                             continue;
                         }
                         float c = val.ReadAsFloat(fieldOff*fieldDesc[valueID].NbValuesPerTuple);
-                        c = (float)((c - min) / max);
+                        m_values[colorValueOff] = c;
+                        c = (float)((c - m_minVal) / (m_maxVal-m_minVal));
 
                         //LAB color space (warm - cold)
                         Color? col = null;
@@ -185,7 +243,7 @@ namespace Sereno
                             col = LABColor.Lerp(coldColor, whiteColor, 2.0f*c).ToXYZ().ToRGB();
                         else
                             col = LABColor.Lerp(whiteColor, warmColor, 2.0f*(c-0.5f)).ToXYZ().ToRGB();
-                        colors.Add(new Vector3(col.Value.r, col.Value.g, col.Value.b));
+                        colors.Add(new Vector4(col.Value.r, col.Value.g, col.Value.b, 1.0f));
                     }
                 }
             }
@@ -202,6 +260,17 @@ namespace Sereno
             PlaneEnabled  = false;
             SphereEnabled = false;
 
+            CreateGameObjects(vec);
+            
+            return true;
+        }
+
+        /// <summary>
+        /// Create all the game objects needed with this small multiple
+        /// </summary>
+        /// <param name="vec">The vector position of the min ([0]) and the max ([0]) in this small multiple. Position normalized. Size == 2</param>
+        private void CreateGameObjects(Vector3[] vec)
+        {
             //Outline GameObject (cube around the gameobject)
             m_outline = GameObject.Instantiate<GameObject>(Outline);
             m_outline.transform.parent        = this.transform;
@@ -209,15 +278,22 @@ namespace Sereno
             m_outline.transform.localScale    = m_mesh.bounds.max - m_mesh.bounds.min;
             m_outline.transform.localRotation = new Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
 
+            //Create color scale game object
+            m_colorScale = Instantiate<GameObject>(ColorScale);
+            m_colorScale.transform.parent = this.transform;
+            m_colorScale.transform.localPosition = new Vector3(0.75f, 0, 0.0f);
+            m_colorScale.transform.localScale    = new Vector3(0.10f, (m_mesh.bounds.max.y-m_mesh.bounds.min.y)/2.0f, 0.10f);
+            m_colorScale.transform.localRotation = new Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
+
             //Min-max objects (line -> label)
             double[] minMaxValues = new double[2];
-            minMaxValues[0] = min;
-            minMaxValues[1] = max;
+            minMaxValues[0] = m_minVal;
+            minMaxValues[1] = m_maxVal;
             for(int i = 0; i < m_minMaxLine.Length; i++)
             {
                 //Line
                 m_minMaxPivots[i] = new GameObject();
-                m_minMaxPivots[i].transform.parent   = this.transform;
+                m_minMaxPivots[i].transform.parent        = this.transform;
                 m_minMaxPivots[i].transform.localPosition = vec[i];
                 m_minMaxPivots[i].transform.localScale    = new Vector3(1.0f, 1.0f, 1.0f);
                 m_minMaxPivots[i].transform.localRotation = Quaternion.LookRotation(vec[i], Vector3.up);
@@ -228,23 +304,37 @@ namespace Sereno
                 m_minMaxLine[i].transform.localPosition = new Vector3(0.0f, 0.0f, (1.5f - vec[i].magnitude)/2.0f);
                 m_minMaxLine[i].transform.localRotation = Quaternion.Euler(90.0f, 0.0f, 0.0f);
 
-                //Label
+                //Line Label
                 m_minMaxLabel[i] = GameObject.Instantiate<TextMesh>(MinMaxLabel);
                 m_minMaxLabel[i].text = String.Format("{0:00.00e+0}", minMaxValues[i]);
                 m_minMaxLabel[i].transform.parent        = m_minMaxPivots[i].transform;
                 m_minMaxLabel[i].transform.localScale    = new Vector3(0.033f, 0.033f, 0.033f);
                 m_minMaxLabel[i].transform.localPosition = new Vector3(0.0f, 0.0f, (1.5f - vec[i].magnitude));
                 m_minMaxLabel[i].transform.localRotation = Quaternion.Euler(90.0f, 0.0f, 0.0f);
+
+                //Color scale label
+                m_minMaxTextScale[i] = GameObject.Instantiate<TextMesh>(MinMaxLabel);
+                m_minMaxTextScale[i].text = String.Format("{0:00.00e+0}", minMaxValues[i]);
+                m_minMaxTextScale[i].transform.parent        = this.transform;
+                m_minMaxTextScale[i].transform.localScale    = new Vector3(0.033f, 0.033f, 0.033f);
+                m_minMaxTextScale[i].transform.localRotation = Quaternion.Euler(90.0f, 0.0f, 0.0f);
             }
+            m_minMaxTextScale[0].transform.localPosition = new Vector3(0.75f, -(m_mesh.bounds.max.y-m_mesh.bounds.min.y)/2.0f-0.10f, 0.0f);
+            m_minMaxTextScale[1].transform.localPosition = new Vector3(0.75f, (m_mesh.bounds.max.y-m_mesh.bounds.min.y)/2.0f+0.05f, 0.0f);
+
             m_minMaxLine[0].GetComponent<MeshRenderer>().material.color = coldColor.ToXYZ().ToRGB();
             m_minMaxLine[1].GetComponent<MeshRenderer>().material.color = warmColor.ToXYZ().ToRGB();
-            return true;
         }
 
         private void LateUpdate()
         {
             Vector3 camPos = Camera.main.transform.position;
             foreach(var t in m_minMaxLabel)
+            {
+                t.transform.LookAt(new Vector3(camPos.x, t.transform.position.y, camPos.z));
+                t.transform.Rotate(new Vector3(0.0f, 1.0f, 0.0f), 180);
+            }
+            foreach(var t in m_minMaxTextScale)
             {
                 t.transform.LookAt(new Vector3(camPos.x, t.transform.position.y, camPos.z));
                 t.transform.Rotate(new Vector3(0.0f, 1.0f, 0.0f), 180);
@@ -258,6 +348,36 @@ namespace Sereno
                 GameObject.Destroy(c);
             foreach(var c in m_minMaxPivots)
                 GameObject.Destroy(c);
+        }
+
+        /// <summary>
+        /// Change the color range to apply (0.0 = minimum value, 1.0 = maximum value)
+        /// <param name="minRange"> The minimum range to apply</param>
+        /// <param name="maxRange"> The maximum range to apply</param>
+        /// </summary>
+        public void ChangeRangeColor(float minRange, float maxRange)
+        {
+            List<Vector4> colors = new List<Vector4>();
+            foreach(float v in m_values)
+            {
+                float c = (v - m_minVal) / (m_maxVal-m_minVal);
+
+                //LAB color space (warm - cold)
+                Color col;
+                if(c < 0.5)
+                    col = LABColor.Lerp(coldColor, whiteColor, 2.0f*c).ToXYZ().ToRGB();
+                else
+                    col = LABColor.Lerp(whiteColor, warmColor, 2.0f*(c-0.5f)).ToXYZ().ToRGB();
+                if(c < minRange || c > maxRange)
+                    col.a = 0.0f;
+                colors.Add(new Vector4(col.r, col.g, col.b, col.a));
+            }
+
+            m_mesh.SetUVs(m_colorID, colors);
+            m_mesh.UploadMeshData(false);
+
+            m_minRangeAmp = minRange;
+            m_maxRangeAmp = maxRange;
         }
 
         /// <summary>
@@ -334,6 +454,24 @@ namespace Sereno
         public Int32 UVID
         {
             get { return m_colorID; }
+        }
+
+        /// <summary>
+        /// The minimum range color amplitude in ratio (i.e between 0.0 and 1.0)
+        /// </summary>
+        public float MinRangeColorAmp
+        {
+            get {return m_minRangeAmp;}
+            set {ChangeRangeColor(value, m_maxRangeAmp);}
+        }
+
+        /// <summary>
+        /// The maximum range color amplitude in ratio (i.e between 0.0 and 1.0)
+        /// </summary>
+        public float MaxRangeColorAmp
+        {
+            get { return m_maxRangeAmp; }
+            set { ChangeRangeColor(m_minRangeAmp, value); }
         }
     }
 }

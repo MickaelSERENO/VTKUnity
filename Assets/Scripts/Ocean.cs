@@ -95,15 +95,15 @@ namespace Sereno
 
                 m_smallMultiples.Add(m_oceanGrid.CreatePointFieldSmallMultiple(2));
                 m_smallMultiples.Add(m_oceanGrid.CreatePointFieldSmallMultiple(3));
-                //m_smallMultiples.Add(m_oceanGrid.CreatePointFieldSmallMultiple(4));
+                m_smallMultiples.Add(m_oceanGrid.CreatePointFieldSmallMultiple(4));
 
                 //Place them correctly and associate the text
-                for (int i = 0; i < m_smallMultiples.Count; i++)
+                for(int i = 0; i < m_smallMultiples.Count; i++)
                 {
                     //Small multiple
                     var c = m_smallMultiples[i];
                     c.transform.parent = this.transform;
-                    c.transform.localPosition = new Vector3(2 * i, 0, 0);
+                    c.transform.localPosition = new Vector3(2.5f*i, 0, 0);
                     c.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
                     //c.SphereEnabled = true;
                     //c.PlaneEnabled  = true;

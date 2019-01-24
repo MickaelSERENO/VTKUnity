@@ -17,10 +17,11 @@ Shader "Sereno/DefaultColor"
 
 		Pass
 		{
+			Lighting Off
 			CGPROGRAM
 			#pragma vertex   vert
 			#pragma fragment frag
-			#pragma multi_compile TEXCOORD0_ON TEXCOORD1_ON TEXCOORD2_ON TEXCOORD3_ON TEXCOORD4_ON TEXCOORD5_ON TEXCOORD6_ON TEXCOORD7_ON
+			#pragma multi_compile TEXCOORD0_ON TEXCOORD1_ON TEXCOORD2_ON TEXCOORD3_ON TEXCOORD4_ON TEXCOORD5_ON TEXCOORD6_ON TEXCOORD7_ON TEXCOORD8_ON
 			#pragma shader_feature SPHERE_ON
 			#pragma shader_feature PLANE_ON
 
@@ -52,6 +53,9 @@ Shader "Sereno/DefaultColor"
 				#endif
 				#if defined(TEXCOORD7_ON)
 				float4 color  : TEXCOORD7;
+				#endif
+				#if defined(TEXCOORD8_ON)
+				float4 color  : TEXCOORD8;
 				#endif
 			};
 
@@ -96,7 +100,7 @@ Shader "Sereno/DefaultColor"
 				return o;
 			}
 			
-			fixed4 frag (v2f i) : SV_Target
+			void frag (v2f i, out float4 color:COLOR)
 			{
 #ifdef PLANE_ON
 				if(i.dotPlane < 0.0)
@@ -106,7 +110,10 @@ Shader "Sereno/DefaultColor"
 				if(i.spherePos > _SphereRadius)
 					discard;
 #endif
-				return i.color;
+				if (i.color.a < 0.999f)
+					discard;
+
+				color = i.color;
 			}
 			
 			ENDCG
